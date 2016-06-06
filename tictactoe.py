@@ -45,19 +45,25 @@ def emptystate():
     return [[EMPTY,EMPTY,EMPTY],[EMPTY,EMPTY,EMPTY],[EMPTY,EMPTY,EMPTY]]
 
 def gameover(state):
+    #win conditions
     for i in range(3):
+        #horizontal wins
         if state[i][0] != EMPTY and state[i][0] == state[i][1] and state[i][0] == state[i][2]:
             return state[i][0]
+        #vertical wins
         if state[0][i] != EMPTY and state[0][i] == state[1][i] and state[0][i] == state[2][i]:
             return state[0][i]
+    #diagonal wins
     if state[0][0] != EMPTY and state[0][0] == state[1][1] and state[0][0] == state[2][2]:
         return state[0][0]
     if state[0][2] != EMPTY and state[0][2] == state[1][1] and state[0][2] == state[2][0]:
         return state[0][2]
+    #return empty for empty cell
     for i in range(3):
         for j in range(3):
             if state[i][j] == EMPTY:
                 return EMPTY
+    #else return draw
     return DRAW
 
 def last_to_act(state):
@@ -217,14 +223,29 @@ class Human(object):
         else:
             print 'Game over! Winner: Player {0}'.format(winner)
 
+def check_move(testmove, teststate):
+    if (testmove[0]>2) or (testmove[1]>2):
+        print "invalid move! try again"
+        return False
+    if teststate[testmove[0]][testmove[1]] != EMPTY:
+        print "filled cell!"
+        return False
+    return True
+
+
 def play(agent1, agent2):
     state = emptystate()
     for i in range(9):
-        if i % 2 == 0:
-            move = agent1.action(state)
-        else:
-            move = agent2.action(state)
+        #iterate over invalid movesi
+        valid = False
+        while valid is False:
+            if i % 2 == 0:
+                move = agent1.action(state)
+            else:
+                move = agent2.action(state)
+            valid = check_move(move, state)           
         state[move[0]][move[1]] = (i % 2) + 1
+        #once we have unfilled move
         winner = gameover(state)
         if winner != EMPTY:
             return winner
@@ -275,7 +296,7 @@ def measure_performance_vs_each_other(agent1, agent2):
     probs = [0,0,0]
     games = 100
     for i in range(games):
-        winner = play(agent1, agent2)
+        winner = play(agent2, agent2)
         if winner == PLAYER_X:
             probs[0] += 1.0 / games
         elif winner == PLAYER_O:
@@ -305,8 +326,9 @@ if __name__ == "__main__":
     writer.writerow(series)
     perf = [[] for _ in range(len(series) + 1)]
     for i in range(10000):
-        if i % 10 == 0:
+        if i % 1000 == 0:
             print 'Game: {0}'.format(i)
+        if i % 10 == 0:
             probs = measure_performance_vs_random(p1, p2)
             writer.writerow(probs)
             f.flush()
@@ -324,7 +346,7 @@ if __name__ == "__main__":
     plt.ylabel('Probability')
     plt.title('RL Agent Performance vs. Random Agent\n({0} loss value, self-play)'.format(p1.lossval))
     #plt.title('P1 Loss={0} vs. P2 Loss={1}'.format(p1.lossval, p2.lossval))
-    plt.legend()
+    plt.legend(loc='best', fonsize=8)
     #plt.show()
     #plt.savefig('p1loss{0}vsp2loss{1}.png'.format(p1.lossval, p2.lossval))
     plt.savefig('selfplay_random_{0}loss.png'.format(p1.lossval))
